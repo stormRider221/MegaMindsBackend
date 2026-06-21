@@ -3,7 +3,7 @@
 const express = require("express");
 const router = express.Router();
 const Student = require("../models/Student");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 // 🔹 Utility: Capitalize first letter of a string
 function capitalizeFirstLetter(str) {

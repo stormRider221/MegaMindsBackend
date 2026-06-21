@@ -7,11 +7,10 @@ const cors = require("cors");
 
 const app = express();
 
+
 // =====================
 // CORS (PRODUCTION SAFE)
 // =====================
-const cors = require("cors");
-
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -20,16 +19,13 @@ app.use(cors({
   credentials: true
 }));
 
-// =====================
-// WEBHOOK RAW (MUST BE BEFORE JSON)
-// =====================
-app.use("/api/webhook", express.raw({ type: "*/*" }));
 
 // =====================
 // BODY PARSING
 // =====================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // =====================
 // ROUTES IMPORTS
@@ -44,6 +40,7 @@ const bookRoutes = require("./routes/bookRoutes");
 const subscriptionPageRoute = require("./routes/subscriptionPageRoute");
 const debugRoutes = require("./routes/debug");
 
+
 // =====================
 // ROUTES REGISTRATION
 // =====================
@@ -53,9 +50,12 @@ app.use("/api/accounts", accountRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/books", bookRoutes);
-app.use("/api/webhook", webhookRoutes);
 app.use("/api/subscription", subscriptionPageRoute);
 app.use("/api/debug", debugRoutes);
+
+// IMPORTANT: webhook should be LAST among routes
+app.use("/api/webhook", webhookRoutes);
+
 
 // =====================
 // TEST ROUTES
@@ -75,6 +75,7 @@ app.get("/api/test", (req, res) => {
   });
 });
 
+
 // =====================
 // ERROR HANDLING
 // =====================
@@ -87,6 +88,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+
 // =====================
 // DATABASE CONNECTION
 // =====================
@@ -97,8 +99,9 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
+
 // =====================
-// START SERVER (DEPLOYMENT SAFE)
+// START SERVER
 // =====================
 const PORT = process.env.PORT || 5000;
 

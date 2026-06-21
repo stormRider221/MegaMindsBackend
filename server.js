@@ -8,10 +8,10 @@ const cors = require("cors");
 const app = express();
 
 // =====================
-// CORS - MUST BE FIRST!
+// CORS (PRODUCTION SAFE)
 // =====================
 app.use(cors({
-  origin: ["http://localhost:5173", "http://192.168.25.202:5173", "http://localhost:3000"],
+  origin: "*",
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -58,7 +58,7 @@ app.use("/api/debug", debugRoutes);
 // TEST ROUTES
 // =====================
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     message: "Mega Minds Academy API",
     status: "running",
     timestamp: new Date().toISOString()
@@ -66,14 +66,14 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/test", (req, res) => {
-  res.json({ 
+  res.json({
     message: "API working fine",
     timestamp: new Date().toISOString()
   });
 });
 
 // =====================
-// ERROR HANDLING MIDDLEWARE
+// ERROR HANDLING
 // =====================
 app.use((err, req, res, next) => {
   console.error("Error:", err);
@@ -87,16 +87,20 @@ app.use((err, req, res, next) => {
 // =====================
 // DATABASE CONNECTION
 // =====================
-mongoose.connect("mongodb://127.0.0.1:27017/megamindsacademy")
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch(err => console.log("❌ MongoDB connection error:", err));
+  .catch(err => {
+    console.log("❌ MongoDB connection error:", err);
+    process.exit(1);
+  });
 
 // =====================
-// START SERVER
+// START SERVER (DEPLOYMENT SAFE)
 // =====================
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Express server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 API URL: http://localhost:${PORT}`);
   console.log(`📍 Test endpoint: http://localhost:${PORT}/api/test`);
 });

@@ -10,11 +10,14 @@ const app = express();
 // =====================
 // CORS (PRODUCTION SAFE)
 // =====================
+const cors = require("cors");
+
 app.use(cors({
-  origin: "*",
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: [
+    "http://localhost:5173",
+    "https://megamindsbackend-9uvj.onrender.com"
+  ],
+  credentials: true
 }));
 
 // =====================

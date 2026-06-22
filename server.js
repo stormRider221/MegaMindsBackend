@@ -33,8 +33,7 @@ app.use(cors({
 }));
 
 // handle preflight requests
-app.options("*", cors());
-
+app.options(/.*/, cors());
 
 // =====================
 // BODY PARSING

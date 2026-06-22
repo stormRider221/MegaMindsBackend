@@ -9,15 +9,31 @@ const app = express();
 
 
 // =====================
-// CORS (PRODUCTION SAFE)
+// CORS CONFIG (FIXED)
 // =====================
+const allowedOrigins = [
+  "https://www.cstech.com.ng",
+  "https://cstech.com.ng",
+  "http://localhost:5173"
+];
+
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://megamindsbackend-9uvj.onrender.com"
-  ],
+  origin: function (origin, callback) {
+    // allow mobile apps / postman / server-to-server
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
 }));
+
+// handle preflight requests
+app.options("*", cors());
 
 
 // =====================
@@ -53,7 +69,7 @@ app.use("/api/books", bookRoutes);
 app.use("/api/subscription", subscriptionPageRoute);
 app.use("/api/debug", debugRoutes);
 
-// IMPORTANT: webhook should be LAST among routes
+// webhook MUST be last
 app.use("/api/webhook", webhookRoutes);
 
 

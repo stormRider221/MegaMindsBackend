@@ -14,6 +14,8 @@ const app = express();
 const allowedOrigins = [
   "https://www.cstech.com.ng",
   "https://cstech.com.ng",
+  "http://www.cstech.com.ng",
+  "http://cstech.com.ng",
   "http://localhost:5173"
 ];
 

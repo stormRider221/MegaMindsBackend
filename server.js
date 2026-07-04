@@ -7,9 +7,8 @@ const cors = require("cors");
 
 const app = express();
 
-
 // =====================
-// CORS CONFIG (FIXED)
+// CORS CONFIG
 // =====================
 const allowedOrigins = [
   "https://www.cstech.com.ng",
@@ -21,7 +20,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow mobile apps / postman / server-to-server
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
@@ -34,15 +32,7 @@ app.use(cors({
   credentials: true
 }));
 
-// handle preflight requests
 app.options(/.*/, cors());
-
-// =====================
-// BODY PARSING
-// =====================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 
 // =====================
 // ROUTES IMPORTS
@@ -57,6 +47,21 @@ const bookRoutes = require("./routes/bookRoutes");
 const subscriptionPageRoute = require("./routes/subscriptionPageRoute");
 const debugRoutes = require("./routes/debug");
 
+// ===================================================
+// PAYSTACK WEBHOOK
+// MUST COME BEFORE express.json()
+// ===================================================
+app.use(
+  "/api/webhook",
+  express.raw({ type: "application/json" }),
+  webhookRoutes
+);
+
+// =====================
+// BODY PARSING
+// =====================
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // =====================
 // ROUTES REGISTRATION
@@ -69,10 +74,6 @@ app.use("/api/lessons", lessonRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/subscription", subscriptionPageRoute);
 app.use("/api/debug", debugRoutes);
-
-// webhook MUST be last
-app.use("/api/webhook", webhookRoutes);
-
 
 // =====================
 // TEST ROUTES
@@ -92,19 +93,18 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-
 // =====================
 // ERROR HANDLING
 // =====================
 app.use((err, req, res, next) => {
   console.error("Error:", err);
+
   res.status(500).json({
     success: false,
     message: "Internal server error",
     error: err.message
   });
 });
-
 
 // =====================
 // DATABASE CONNECTION
@@ -115,7 +115,6 @@ mongoose.connect(process.env.MONGO_URI)
     console.log("❌ MongoDB connection error:", err);
     process.exit(1);
   });
-
 
 // =====================
 // START SERVER

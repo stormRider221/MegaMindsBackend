@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 
 const Account = require("../models/Account");
 const authMiddleware = require("../middleware/auth");
+const Subscription = require("../models/Subscription");
+
 
 
 // ===============================
@@ -57,9 +59,38 @@ router.post("/social-login", async (req, res) => {
       { expiresIn: "30d" }
     );
 
+    // ===============================
+    // GET CURRENT SUBSCRIPTION
+    // ===============================
+    const subscription = await Subscription.findOne({
+      userId: account._id
+    });
+
+    const now = new Date();
+
+    const subscriptionData = {
+      isActive: false,
+      status: "inactive",
+      plan: null,
+      endDate: null
+    };
+
+    if (
+      subscription &&
+      subscription.status === "active" &&
+      subscription.endDate &&
+      subscription.endDate > now
+    ) {
+      subscriptionData.isActive = true;
+      subscriptionData.status = subscription.status;
+      subscriptionData.plan = subscription.plan;
+      subscriptionData.endDate = subscription.endDate;
+    }
+
     return res.json({
       success: true,
       account,
+      subscription: subscriptionData,
       token
     });
 

@@ -5,6 +5,7 @@ const subscriptionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Account',
         required: true,
+        unique: true,
     },
     plan: {
         type: String,
@@ -16,6 +17,13 @@ const subscriptionSchema = new mongoose.Schema({
         enum: ['active', 'expired', 'cancelled', 'pending'],
         default: 'pending',
     },
+
+    isActive: {
+        type: Boolean,
+        default: false,
+    },
+
+
     amount: {
         type: Number,
         required: true,

@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const Account = require("../models/Account");
 const authMiddleware = require("../middleware/auth");
 const Subscription = require("../models/Subscription");
+const School = require("../models/School");
 
 
 
@@ -20,7 +21,8 @@ router.post("/social-login", async (req, res) => {
       accountType,
       country,
       pricingTier,
-      photoURL
+      photoURL,
+      slug
     } = req.body;
 
     let account = await Account.findOne({
@@ -49,8 +51,51 @@ router.post("/social-login", async (req, res) => {
         password: null
       });
 
-      await account.save();
-      console.log("New social account created:", email);
+      // Create school tenant for school accounts
+      if (account.accountType === "school") {
+
+        if (!slug || !slug.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: "School URL name is required"
+          });
+        }
+
+        const cleanSlug = slug.trim().toLowerCase();
+
+        const existingSchool = await School.findOne({
+          slug: cleanSlug
+        });
+
+        if (existingSchool) {
+          return res.status(400).json({
+            success: false,
+            message: "This school URL name is already taken"
+          });
+        }
+
+        await account.save();
+
+        const school = new School({
+          name: account.name,
+          slug: cleanSlug,
+          ownerAccount: account._id
+        });
+
+        await school.save();
+
+        account.schoolId = school._id;
+        await account.save();
+
+        console.log("School tenant created:", school.slug);
+
+      } else {
+
+        await account.save();
+        console.log("New social account created:", email);
+
+      }
+
     }
 
     const token = jwt.sign(

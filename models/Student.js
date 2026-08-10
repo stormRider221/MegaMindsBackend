@@ -17,6 +17,15 @@ const StudentSchema = new mongoose.Schema({
     ref: "Account"
   }],
 
+  schoolId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "School",
+  default: null,
+  index: true
+},
+
+
+
   studentId: {
     type: String,
     unique: true

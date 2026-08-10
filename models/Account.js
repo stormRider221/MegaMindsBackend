@@ -56,6 +56,14 @@ const AccountSchema = new mongoose.Schema({
     }
   ],
 
+  schoolId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "School",
+  default: null,
+  index: true
+},
+
+
 
   subscriptionStatus: {
     type: String,

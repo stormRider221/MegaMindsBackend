@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 const Account = require("../models/Account");
 const authMiddleware = require("../middleware/auth");
 const Subscription = require("../models/Subscription");
-const School = require("../models/School");
 
 
 
@@ -21,8 +20,7 @@ router.post("/social-login", async (req, res) => {
       accountType,
       country,
       pricingTier,
-      photoURL,
-      slug
+      photoURL
     } = req.body;
 
     let account = await Account.findOne({
@@ -31,6 +29,7 @@ router.post("/social-login", async (req, res) => {
 
     // New user (first time login)
     if (!account) {
+
       if (!accountType) {
         return res.json({
           success: true,
@@ -48,55 +47,16 @@ router.post("/social-login", async (req, res) => {
         country,
         pricingTier,
         photoURL,
-        password: null
+        password: null,
+        schoolId: null,
+        onboardingCompleted: false
       });
 
-      // Create school tenant for school accounts
-      if (account.accountType === "school") {
+      await account.save();
 
-        if (!slug || !slug.trim()) {
-          return res.status(400).json({
-            success: false,
-            message: "School URL name is required"
-          });
-        }
-
-        const cleanSlug = slug.trim().toLowerCase();
-
-        const existingSchool = await School.findOne({
-          slug: cleanSlug
-        });
-
-        if (existingSchool) {
-          return res.status(400).json({
-            success: false,
-            message: "This school URL name is already taken"
-          });
-        }
-
-        await account.save();
-
-        const school = new School({
-          name: account.name,
-          slug: cleanSlug,
-          ownerAccount: account._id
-        });
-
-        await school.save();
-
-        account.schoolId = school._id;
-        await account.save();
-
-        console.log("School tenant created:", school.slug);
-
-      } else {
-
-        await account.save();
-        console.log("New social account created:", email);
-
-      }
-
+      console.log("New social account created:", email);
     }
+
 
     const token = jwt.sign(
       { id: account._id },
@@ -147,6 +107,139 @@ router.post("/social-login", async (req, res) => {
     });
   }
 });
+
+
+
+
+
+
+// ===============================
+// SCHOOL SETUP
+// ===============================
+router.post("/school-setup", authMiddleware, async (req, res) => {
+  try {
+    const { schoolName, slug } = req.body;
+
+    // ===============================
+    // VALIDATION
+    // ===============================
+    if (!schoolName || !schoolName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "School name is required"
+      });
+    }
+
+    if (!slug || !slug.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "School URL name is required"
+      });
+    }
+
+    // ===============================
+    // GET ACCOUNT
+    // ===============================
+    const account = await Account.findById(req.user.id);
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: "Account not found"
+      });
+    }
+
+    // ===============================
+    // CONFIRM SCHOOL ACCOUNT
+    // ===============================
+    if (account.accountType !== "school") {
+      return res.status(403).json({
+        success: false,
+        message: "Only school accounts can complete school setup"
+      });
+    }
+
+    // ===============================
+    // CHECK SLUG
+    // ===============================
+    const School = require("../models/School");
+
+    const cleanSlug = slug
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+
+    const existingSchool = await School.findOne({
+      slug: cleanSlug
+    });
+
+    if (existingSchool) {
+      return res.status(400).json({
+        success: false,
+        message: "This school URL name is already taken"
+      });
+    }
+
+    // ===============================
+    // CREATE SCHOOL
+    // ===============================
+    const school = new School({
+      name: schoolName.trim(),
+      slug: cleanSlug,
+      ownerAccount: account._id
+    });
+
+    await school.save();
+
+    // ===============================
+    // UPDATE ACCOUNT
+    // ===============================
+    account.schoolId = school._id;
+    account.onboardingCompleted = true;
+
+    await account.save();
+
+    // ===============================
+    // RESPONSE
+    // ===============================
+    return res.json({
+      success: true,
+      message: "School setup completed successfully",
+      school,
+      account
+    });
+
+  } catch (error) {
+    console.error("School setup error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // ===============================

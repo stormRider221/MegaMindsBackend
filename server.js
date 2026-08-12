@@ -46,6 +46,7 @@ const lessonRoutes = require("./routes/lessonRoutes");
 const bookRoutes = require("./routes/bookRoutes");
 const subscriptionPageRoute = require("./routes/subscriptionPageRoute");
 const debugRoutes = require("./routes/debug");
+const schoolRoutes = require("./routes/school");
 
 // ===================================================
 // PAYSTACK WEBHOOK
@@ -74,6 +75,7 @@ app.use("/api/lessons", lessonRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/subscription", subscriptionPageRoute);
 app.use("/api/debug", debugRoutes);
+app.use("/api/schools", schoolRoutes);
 
 // =====================
 // TEST ROUTES

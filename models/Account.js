@@ -37,7 +37,7 @@ const AccountSchema = new mongoose.Schema({
 
   pricingTier: {
     type: String,
-    enum: ["LOCAL", "AFRICA", "INTERNATIONAL"]
+    enum: ["LOCAL", "INTERNATIONAL"]
   },
 
   photoURL: {
@@ -63,6 +63,10 @@ const AccountSchema = new mongoose.Schema({
   index: true
 },
 
+onboardingCompleted: {
+  type: Boolean,
+  default: false
+},
 
 
   subscriptionStatus: {

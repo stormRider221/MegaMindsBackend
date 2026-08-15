@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const Account = require("../models/Account");
 const authMiddleware = require("../middleware/auth");
 const Subscription = require("../models/Subscription");
+const School = require("../models/School");
 
 
 
@@ -116,6 +117,9 @@ router.post("/social-login", async (req, res) => {
 // ===============================
 // SCHOOL SETUP
 // ===============================
+// ===============================
+// SCHOOL BASIC SETUP
+// ===============================
 router.post("/school-setup", authMiddleware, async (req, res) => {
   try {
     const { schoolName, slug } = req.body;
@@ -160,9 +164,9 @@ router.post("/school-setup", authMiddleware, async (req, res) => {
     }
 
     // ===============================
-    // CHECK SLUG
+    // CLEAN VALUES
     // ===============================
-    const School = require("../models/School");
+    const cleanName = schoolName.trim();
 
     const cleanSlug = slug
       .trim()
@@ -170,11 +174,38 @@ router.post("/school-setup", authMiddleware, async (req, res) => {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9-]/g, "");
 
-    const existingSchool = await School.findOne({
+    if (!cleanSlug) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid school URL name"
+      });
+    }
+
+    // ===============================
+    // CHECK SCHOOL NAME
+    // ===============================
+    const existingSchoolName = await School.findOne({
+      name: {
+        $regex: `^${cleanName}$`,
+        $options: "i"
+      }
+    });
+
+    if (existingSchoolName) {
+      return res.status(400).json({
+        success: false,
+        message: "A school with this name already exists"
+      });
+    }
+
+    // ===============================
+    // CHECK SLUG
+    // ===============================
+    const existingSchoolSlug = await School.findOne({
       slug: cleanSlug
     });
 
-    if (existingSchool) {
+    if (existingSchoolSlug) {
       return res.status(400).json({
         success: false,
         message: "This school URL name is already taken"
@@ -185,7 +216,7 @@ router.post("/school-setup", authMiddleware, async (req, res) => {
     // CREATE SCHOOL
     // ===============================
     const school = new School({
-      name: schoolName.trim(),
+      name: cleanName,
       slug: cleanSlug,
       ownerAccount: account._id
     });
@@ -196,22 +227,54 @@ router.post("/school-setup", authMiddleware, async (req, res) => {
     // UPDATE ACCOUNT
     // ===============================
     account.schoolId = school._id;
-    account.onboardingCompleted = true;
+
+    // IMPORTANT:
+    // The school has NOT completed
+    // onboarding yet.
+    account.onboardingCompleted = false;
 
     await account.save();
 
     // ===============================
     // RESPONSE
     // ===============================
-    return res.json({
+    return res.status(201).json({
       success: true,
-      message: "School setup completed successfully",
+      message: "Basic school setup completed",
       school,
       account
     });
 
   } catch (error) {
     console.error("School setup error:", error);
+
+    // ===============================
+    // HANDLE DUPLICATE INDEX ERROR
+    // ===============================
+    if (error.code === 11000) {
+      const duplicateField = Object.keys(error.keyPattern || {})[0];
+
+      if (duplicateField === "name") {
+        return res.status(400).json({
+          success: false,
+          message: "A school with this name already exists"
+        });
+      }
+
+      if (duplicateField === "slug") {
+        return res.status(400).json({
+          success: false,
+          message: "This school URL name is already taken"
+        });
+      }
+
+      if (duplicateField === "ownerAccount") {
+        return res.status(400).json({
+          success: false,
+          message: "This account already has a school"
+        });
+      }
+    }
 
     return res.status(500).json({
       success: false,

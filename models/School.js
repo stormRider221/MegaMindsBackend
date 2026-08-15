@@ -5,6 +5,7 @@ const SchoolSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      unique: true,
       trim: true
     },
 
@@ -23,10 +24,62 @@ const SchoolSchema = new mongoose.Schema(
       unique: true
     },
 
+    // ===============================
+    // SCHOOL PROFILE
+    // ===============================
     logo: {
-      type: String
+      type: String,
+      default: ""
     },
 
+    address: {
+      type: String,
+      default: ""
+    },
+
+    city: {
+      type: String,
+      default: ""
+    },
+
+    state: {
+      type: String,
+      default: ""
+    },
+
+    country: {
+      type: String,
+      default: ""
+    },
+
+    phone: {
+      type: String,
+      default: ""
+    },
+
+    email: {
+      type: String,
+      default: ""
+    },
+
+    website: {
+      type: String,
+      default: ""
+    },
+
+    motto: {
+      type: String,
+      default: ""
+    },
+
+    description: {
+      type: String,
+      default: ""
+    },
+
+    // ===============================
+    // SCHOOL BRANDING
+    // ===============================
     primaryColor: {
       type: String,
       default: "#6C4AB6"
@@ -37,6 +90,9 @@ const SchoolSchema = new mongoose.Schema(
       default: "#FFFFFF"
     },
 
+    // ===============================
+    // STATUS
+    // ===============================
     isActive: {
       type: Boolean,
       default: true

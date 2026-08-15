@@ -285,7 +285,164 @@ router.post("/school-setup", authMiddleware, async (req, res) => {
 
 
 
+// ===============================
+// COMPLETE SCHOOL PROFILE
+// ===============================
+router.put("/school-profile", authMiddleware, async (req, res) => {
+  try {
+    const {
+      address,
+      city,
+      state,
+      country,
+      phone,
+      email,
+      website,
+      motto,
+      description,
+      logo,
+      primaryColor,
+      secondaryColor
+    } = req.body;
 
+    // ===============================
+    // GET ACCOUNT
+    // ===============================
+    const account = await Account.findById(req.user.id);
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: "Account not found"
+      });
+    }
+
+    // ===============================
+    // CONFIRM SCHOOL ACCOUNT
+    // ===============================
+    if (account.accountType !== "school") {
+      return res.status(403).json({
+        success: false,
+        message: "Only school accounts can complete school profile"
+      });
+    }
+
+    // ===============================
+    // CHECK SCHOOL ID
+    // ===============================
+    if (!account.schoolId) {
+      return res.status(400).json({
+        success: false,
+        message: "School setup has not been started"
+      });
+    }
+
+    // ===============================
+    // REQUIRED FIELDS
+    // ===============================
+    if (!address || !address.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "School address is required"
+      });
+    }
+
+    if (!city || !city.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "City is required"
+      });
+    }
+
+    if (!state || !state.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "State is required"
+      });
+    }
+
+    if (!country || !country.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Country is required"
+      });
+    }
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "School phone number is required"
+      });
+    }
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "School email is required"
+      });
+    }
+
+    // ===============================
+    // FIND SCHOOL
+    // ===============================
+    const school = await School.findById(account.schoolId);
+
+    if (!school) {
+      return res.status(404).json({
+        success: false,
+        message: "School not found"
+      });
+    }
+
+    // ===============================
+    // UPDATE SCHOOL PROFILE
+    // ===============================
+    school.address = address.trim();
+    school.city = city.trim();
+    school.state = state.trim();
+    school.country = country.trim();
+    school.phone = phone.trim();
+    school.email = email.trim();
+
+    school.website = website?.trim() || "";
+    school.motto = motto?.trim() || "";
+    school.description = description?.trim() || "";
+
+    // Logo will initially be a URL.
+    // Actual image upload can be added separately.
+    school.logo = logo?.trim() || "";
+
+    school.primaryColor = primaryColor || "#6C4AB6";
+    school.secondaryColor = secondaryColor || "#FFFFFF";
+
+    await school.save();
+
+    // ===============================
+    // COMPLETE ONBOARDING
+    // ===============================
+    account.onboardingCompleted = true;
+
+    await account.save();
+
+    // ===============================
+    // RESPONSE
+    // ===============================
+    return res.json({
+      success: true,
+      message: "School profile completed successfully",
+      school,
+      account
+    });
+
+  } catch (error) {
+    console.error("School profile error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
 
 
 

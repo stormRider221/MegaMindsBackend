@@ -30,72 +30,159 @@ function generatePassword() {
 
 router.post("/add", async (req, res) => {
   try {
-    const { preferredName, surname, parentIds, schoolId, email, country } = req.body;
 
-    // 🔹 Validate input
-    if (!preferredName || !surname || !parentIds || parentIds.length === 0) {
-      return res.status(400).json({ message: "Please fill in both Surname and Preferred Name." });
-    }
+    const {
+      preferredName,
+      surname,
+      dateOfBirth,
+      parentIds,
+      schoolId
+    } = req.body;
 
-    // 🔹 Normalize names
-    const capitalPreferredName = capitalizeFirstLetter(preferredName.trim());
-    const capitalSurname = capitalizeFirstLetter(surname.trim());
 
-    // 🔹 Check for duplicates under the same parent account
-    const duplicate = await Student.findOne({
-      preferredName: capitalPreferredName,
-      surname: capitalSurname,
-      parentIds: { $in: parentIds }, // checks if student is already linked to the parent
-    });
+    // ==========================================
+    // VALIDATION
+    // ==========================================
 
-    if (duplicate) {
+    if (!preferredName || !surname) {
       return res.status(400).json({
-        message: `"${capitalSurname} ${capitalPreferredName}" already exists in this account.`
+        message: "Please provide both Surname and Preferred Name."
       });
     }
 
-    // 🔹 Generate unique Student ID
-    let studentId = generateStudentId(preferredName);
+
+    // ==========================================
+    // NORMALIZE NAMES
+    // ==========================================
+
+    const capitalPreferredName =
+      capitalizeFirstLetter(preferredName.trim());
+
+    const capitalSurname =
+      capitalizeFirstLetter(surname.trim());
+
+
+    // ==========================================
+    // NORMALIZE RELATIONSHIPS
+    // ==========================================
+
+    const normalizedParentIds =
+      Array.isArray(parentIds) ? parentIds : [];
+
+
+    // ==========================================
+    // DUPLICATE CHECK
+    // ==========================================
+
+    // Check duplicate only when a parent is involved
+    if (normalizedParentIds.length > 0) {
+
+      const duplicate = await Student.findOne({
+        preferredName: capitalPreferredName,
+        surname: capitalSurname,
+        parentIds: { $in: normalizedParentIds }
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          message:
+            `"${capitalSurname} ${capitalPreferredName}" already exists in this account.`
+        });
+      }
+    }
+
+
+    // ==========================================
+    // GENERATE UNIQUE SCHOLAR ID
+    // ==========================================
+
+    let studentId = generateStudentId(capitalPreferredName);
+
     let exists = await Student.findOne({ studentId });
+
     while (exists) {
-      studentId = generateStudentId(preferredName);
+      studentId = generateStudentId(capitalPreferredName);
       exists = await Student.findOne({ studentId });
     }
 
-    // 🔹 Generate password
-    const plainPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-    // 🔹 Create student
+    // ==========================================
+    // GENERATE PASSWORD
+    // ==========================================
+
+    const plainPassword = generatePassword();
+
+    const hashedPassword =
+      await bcrypt.hash(plainPassword, 10);
+
+
+    // ==========================================
+    // CREATE SCHOLAR
+    // ==========================================
+
     const newStudent = new Student({
+
       preferredName: capitalPreferredName,
+
       surname: capitalSurname,
-      fullName: `${capitalPreferredName} ${capitalSurname}`,
-      email: email || null,
-      password: hashedPassword,
+
+      dateOfBirth: dateOfBirth || null,
+
       studentId,
-      country: country || "Nigeria",
-      role: "student",
+
+      parentIds: normalizedParentIds,
+
       schoolId: schoolId || null,
-      parentIds,
+
+      password: hashedPassword,
+
       progress: 0,
-      subscriptionStatus: "inactive",
-      createdAt: new Date(),
+
+      learningProfile: {
+
+        interests: [],
+
+        strengths: [],
+
+        areasForImprovement: [],
+
+        learningLevel: ""
+
+      },
+
+      isActive: true,
+
+      createdAt: new Date()
+
     });
+
 
     await newStudent.save();
 
+
+    // ==========================================
+    // RESPONSE
+    // ==========================================
+
     res.status(201).json({
+
       ...newStudent._doc,
-      generatedPassword: plainPassword,
+
+      generatedPassword: plainPassword
+
     });
 
+
   } catch (err) {
-    console.error("Server error:", err);
-    res.status(500).json({ message: "Server error" });
+
+    console.error("Server error creating Scholar:", err);
+
+    res.status(500).json({
+      message: "Server error"
+    });
+
   }
 });
-
 
 
 

@@ -2,15 +2,36 @@ const mongoose = require("mongoose");
 
 const StudentSchema = new mongoose.Schema({
 
+  // ===============================
+  // IDENTITY
+  // ===============================
+
   preferredName: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
 
   surname: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
+
+  dateOfBirth: {
+    type: Date,
+    default: null
+  },
+
+  studentId: {
+    type: String,
+    unique: true
+  },
+
+
+  // ===============================
+  // RELATIONSHIPS
+  // ===============================
 
   parentIds: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -18,26 +39,65 @@ const StudentSchema = new mongoose.Schema({
   }],
 
   schoolId: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "School",
-  default: null,
-  index: true
-},
-
-
-
-  studentId: {
-    type: String,
-    unique: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "School",
+    default: null,
+    index: true
   },
+
+
+  // ===============================
+  // LEARNING PROFILE
+  // ===============================
+
+  learningProfile: {
+
+    interests: [{
+      type: String
+    }],
+
+    strengths: [{
+      type: String
+    }],
+
+    areasForImprovement: [{
+      type: String
+    }],
+
+    learningLevel: {
+      type: String,
+      default: ""
+    }
+
+  },
+
+
+  // ===============================
+  // PROGRESS
+  // ===============================
+
+  progress: {
+    type: Number,
+    default: 0
+  },
+
+
+  // ===============================
+  // AUTHENTICATION
+  // ===============================
 
   password: {
     type: String
   },
 
-  progress: {
-    type: Number,
-    default: 0
+
+  // ===============================
+  // ACCOUNT STATUS
+  // ===============================
+
+  isActive: {
+    type: Boolean,
+    default: true
   },
 
   createdAt: {

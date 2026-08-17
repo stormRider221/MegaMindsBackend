@@ -288,6 +288,155 @@ router.get("/", async (req, res) => {
 });
 
 
+
+
+// ==========================================
+// GET /api/students/:id
+// Get one Scholar by MongoDB ID
+// ==========================================
+
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const scholar = await Student.findById(id)
+      .select("-password");
+
+    if (!scholar) {
+      return res.status(404).json({
+        message: "Scholar not found"
+      });
+    }
+
+    res.json(scholar);
+
+  } catch (error) {
+    console.error("Get scholar error:", error);
+
+    res.status(500).json({
+      message: "Server error fetching scholar"
+    });
+  }
+});
+
+
+
+// ==========================================
+// PUT /api/students/:id
+// Update Scholar Profile
+// ==========================================
+
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      preferredName,
+      surname,
+      dateOfBirth,
+      learningProfile,
+      isActive
+    } = req.body;
+
+    const scholar = await Student.findById(id);
+
+    if (!scholar) {
+      return res.status(404).json({
+        message: "Scholar not found"
+      });
+    }
+
+    // ==========================================
+    // UPDATE IDENTITY
+    // ==========================================
+
+    if (preferredName !== undefined) {
+      scholar.preferredName =
+        capitalizeFirstLetter(preferredName.trim());
+    }
+
+    if (surname !== undefined) {
+      scholar.surname =
+        capitalizeFirstLetter(surname.trim());
+    }
+
+    if (dateOfBirth !== undefined) {
+      scholar.dateOfBirth = dateOfBirth || null;
+    }
+
+
+    // ==========================================
+    // UPDATE LEARNING PROFILE
+    // ==========================================
+
+    if (learningProfile) {
+
+      if (learningProfile.interests !== undefined) {
+        scholar.learningProfile.interests =
+          learningProfile.interests;
+      }
+
+      if (learningProfile.strengths !== undefined) {
+        scholar.learningProfile.strengths =
+          learningProfile.strengths;
+      }
+
+      if (learningProfile.areasForImprovement !== undefined) {
+        scholar.learningProfile.areasForImprovement =
+          learningProfile.areasForImprovement;
+      }
+
+      if (learningProfile.learningLevel !== undefined) {
+        scholar.learningProfile.learningLevel =
+          learningProfile.learningLevel;
+      }
+    }
+
+
+    // ==========================================
+    // ACCOUNT STATUS
+    // ==========================================
+
+    if (isActive !== undefined) {
+      scholar.isActive = isActive;
+    }
+
+
+    await scholar.save();
+
+
+    // Never return password
+    const scholarResponse = scholar.toObject();
+    delete scholarResponse.password;
+
+
+    res.json({
+      message: "Scholar updated successfully",
+      scholar: scholarResponse
+    });
+
+  } catch (error) {
+
+    console.error("Update scholar error:", error);
+
+    res.status(500).json({
+      message: "Server error updating scholar"
+    });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 router.delete("/:id", async (req, res) => {
   try {
     const student = await Student.findByIdAndDelete(req.params.id);

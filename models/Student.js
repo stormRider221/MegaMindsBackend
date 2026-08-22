@@ -23,6 +23,12 @@ const StudentSchema = new mongoose.Schema({
     default: null
   },
 
+  classLevel: {
+    type: String,
+    default: "",
+    trim: true
+  },
+
   studentId: {
     type: String,
     unique: true

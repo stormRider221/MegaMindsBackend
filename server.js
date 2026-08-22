@@ -4,8 +4,9 @@ dotenv.config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
 const app = express();
+const assessmentRoutes = require("./routes/assessment");
+
 
 // =====================
 // CORS CONFIG
@@ -76,6 +77,8 @@ app.use("/api/books", bookRoutes);
 app.use("/api/subscription", subscriptionPageRoute);
 app.use("/api/debug", debugRoutes);
 app.use("/api/schools", schoolRoutes);
+app.use("/api/assessments", assessmentRoutes);
+
 
 // =====================
 // TEST ROUTES

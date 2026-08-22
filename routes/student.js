@@ -35,6 +35,7 @@ router.post("/add", async (req, res) => {
       preferredName,
       surname,
       dateOfBirth,
+      classLevel,
       parentIds,
       schoolId
     } = req.body;
@@ -127,6 +128,8 @@ router.post("/add", async (req, res) => {
       surname: capitalSurname,
 
       dateOfBirth: dateOfBirth || null,
+
+      classLevel: classLevel || "",
 
       studentId,
 
@@ -221,7 +224,7 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    
+
     // ✅ Success
     res.json({
       student: {
@@ -249,43 +252,76 @@ router.post("/login", async (req, res) => {
 
 
 // ==========================================
-// GET students linked to parent or school
+// GET /api/students/:id
+// Get one Scholar for profile
 // ==========================================
 
-router.get("/", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const { parentId, schoolId } = req.query;
+    const { id } = req.params;
 
-    console.log("GET /api/students - Query params received:", { parentId, schoolId });
+    const scholar = await Student.findById(id)
+      .select("-password -dateOfBirth");
 
-    let query = {};
-
-    // 🔹 If parentId is provided, get students for that specific parent
-    if (parentId) {
-      query.parentIds = { $in: [parentId] };
-      console.log("Filtering by parentId:", parentId);
+    if (!scholar) {
+      return res.status(404).json({
+        message: "Scholar not found"
+      });
     }
 
-    // 🔹 If schoolId is provided, get students for that specific school
-    if (schoolId) {
-      query.schoolId = schoolId;
-      console.log("Filtering by schoolId:", schoolId);
+    // ==========================================
+    // CALCULATE AGE
+    // ==========================================
+
+    let age = null;
+
+    if (scholar.dateOfBirth) {
+      const today = new Date();
+      const birthDate = new Date(scholar.dateOfBirth);
+
+      age = today.getFullYear() - birthDate.getFullYear();
+
+      const monthDifference =
+        today.getMonth() - birthDate.getMonth();
+
+      if (
+        monthDifference < 0 ||
+        (
+          monthDifference === 0 &&
+          today.getDate() < birthDate.getDate()
+        )
+      ) {
+        age--;
+      }
     }
 
-    console.log("Final MongoDB query:", JSON.stringify(query));
+    // ==========================================
+    // PROFILE RESPONSE
+    // ==========================================
 
-    const students = await Student
-      .find(query)
-      .sort({ createdAt: -1 });
+    res.json({
+      _id: scholar._id,
+      preferredName: scholar.preferredName,
+      surname: scholar.surname,
+      studentId: scholar.studentId,
+      classLevel: scholar.classLevel,
+      age,
+      schoolId: scholar.schoolId,
+      progress: scholar.progress,
+      learningProfile: scholar.learningProfile,
+      isActive: scholar.isActive,
+      createdAt: scholar.createdAt
+    });
 
-    console.log(`Found ${students.length} students`);
-    res.json(students);
+  } catch (error) {
+    console.error("Get scholar error:", error);
 
-  } catch (err) {
-    console.error("Fetch students error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error fetching scholar"
+    });
   }
 });
+
 
 
 
@@ -334,6 +370,7 @@ router.put("/:id", async (req, res) => {
       preferredName,
       surname,
       dateOfBirth,
+      classLevel,
       learningProfile,
       isActive
     } = req.body;
@@ -362,6 +399,9 @@ router.put("/:id", async (req, res) => {
 
     if (dateOfBirth !== undefined) {
       scholar.dateOfBirth = dateOfBirth || null;
+    }
+    if (classLevel !== undefined) {
+      scholar.classLevel = classLevel.trim();
     }
 
 
